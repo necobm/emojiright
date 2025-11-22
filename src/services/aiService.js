@@ -18,47 +18,69 @@ const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
  * @returns {Promise<Array>} Array of emoji suggestions with reasons
  */
 async function getOpenAISuggestions(phrase) {
-  // TODO: Implement OpenAI API integration
-  // API Endpoint: https://api.openai.com/v1/chat/completions
-  // Model: gpt-3.5-turbo or gpt-4
-  // 
-  // Prompt template:
-  // "Given the phrase: '{phrase}', suggest 5 relevant emojis with brief explanations.
-  //  Return ONLY a JSON array with format: [{emoji: '💡', reason: 'Represents ideas and creativity'}]"
-  
   if (!OPENAI_API_KEY || OPENAI_API_KEY === 'your_openai_api_key_here') {
     throw new Error('OpenAI API key not configured. Please set VITE_OPENAI_API_KEY in .env file.')
   }
 
-  // Stub implementation - replace with actual API call
-  console.warn('Using stub implementation. Implement OpenAI integration.')
-  
-  // Example API call structure (commented out):
-  /*
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_API_KEY}`
-    },
-    body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: [{
-        role: 'system',
-        content: 'You are an emoji suggestion assistant. Respond with JSON only.'
-      }, {
-        role: 'user',
-        content: `Given the phrase: "${phrase}", suggest the most 3 relevant emojis. Return ONLY a JSON array with format: [{"emoji": "💡", "reason": "Represents ideas"}]`
-      }],
-      temperature: 0.7
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [{
+          role: 'system',
+          content: 'You are an emoji suggestion assistant. Respond ONLY with a valid JSON array, no markdown, no explanations.'
+        }, {
+          role: 'user',
+          content: `Given the phrase: "${phrase}", suggest 5 relevant emojis. Return ONLY a JSON array with this exact format: [{"emoji": "💡", "reason": "Represents ideas"}]`
+        }],
+        temperature: 0.7,
+        max_tokens: 300
+      })
     })
-  })
-  
-  const data = await response.json()
-  return JSON.parse(data.choices[0].message.content)
-  */
 
-  return getMockSuggestions(phrase)
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error?.message || `OpenAI API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const content = data.choices[0].message.content.trim()
+    
+    // Try to parse JSON, handling potential markdown wrapping
+    let suggestions
+    try {
+      // Remove markdown code blocks if present
+      const cleanedContent = content.replace(/```json\n?|\n?```/g, '').trim()
+      suggestions = JSON.parse(cleanedContent)
+    } catch (parseError) {
+      console.error('Failed to parse OpenAI response:', content)
+      throw new Error('Invalid response format from OpenAI. Please try again.')
+    }
+
+    // Validate response format
+    if (!Array.isArray(suggestions) || suggestions.length === 0) {
+      throw new Error('OpenAI returned an invalid response format')
+    }
+
+    // Validate each suggestion has required fields
+    const validSuggestions = suggestions.filter(item => item.emoji && item.reason)
+    if (validSuggestions.length === 0) {
+      throw new Error('No valid emoji suggestions in response')
+    }
+
+    return validSuggestions
+  } catch (error) {
+    if (error.message.includes('API key')) {
+      throw error
+    }
+    console.error('OpenAI API error:', error)
+    throw new Error(`Failed to get suggestions from OpenAI: ${error.message}`)
+  }
 }
 
 /**
@@ -67,109 +89,73 @@ async function getOpenAISuggestions(phrase) {
  * @returns {Promise<Array>} Array of emoji suggestions with reasons
  */
 async function getGeminiSuggestions(phrase) {
-  // TODO: Implement Gemini API integration
-  // API Endpoint: https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent
-  // 
-  // Prompt template:
-  // "Given the phrase: '{phrase}', suggest the most 3 relevant emojis with brief explanations.
-  //  Return ONLY a JSON array with format: [{emoji: '💡', reason: 'Represents ideas and creativity'}]"
-
   if (!GEMINI_API_KEY || GEMINI_API_KEY === 'your_gemini_api_key_here') {
     throw new Error('Gemini API key not configured. Please set VITE_GEMINI_API_KEY in .env file.')
   }
 
-  // Stub implementation - replace with actual API call
-  console.warn('Using stub implementation. Implement Gemini integration.')
-  
-  // Example API call structure (commented out):
-  /*
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `Given the phrase: "${phrase}", suggest 5 relevant emojis. Return ONLY a JSON array with format: [{"emoji": "💡", "reason": "Represents ideas"}]`
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Given the phrase: "${phrase}", suggest the most 4 relevant emojis. Return ONLY a JSON array with this exact format: [{"emoji": "💡", "reason": "Represents ideas"}]. No markdown, no explanations, just the JSON array.`
+            }]
           }]
-        }]
-      })
+        })
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error?.message || `Gemini API error: ${response.status}`)
     }
-  )
-  
-  const data = await response.json()
-  const textResponse = data.candidates[0].content.parts[0].text
-  return JSON.parse(textResponse)
-  */
 
-  return getMockSuggestions(phrase)
-}
-
-/**
- * Mock suggestions for development/testing
- * @param {string} phrase - The user's input phrase
- * @returns {Array} Array of mock emoji suggestions
- */
-function getMockSuggestions(phrase) {
-  // Simple keyword-based mock suggestions
-  const lowerPhrase = phrase.toLowerCase()
-  
-  const keywordMap = {
-    'idea': [
-      { emoji: '💡', reason: 'Represents ideas and inspiration' },
-      { emoji: '🧠', reason: 'Symbolizes thinking and creativity' },
-      { emoji: '✨', reason: 'Sparkles for brilliant ideas' },
-      { emoji: '🎯', reason: 'Targeting the right solution' },
-      { emoji: '🚀', reason: 'Launching new concepts' }
-    ],
-    'work': [
-      { emoji: '💼', reason: 'Professional work context' },
-      { emoji: '⚙️', reason: 'Working mechanism' },
-      { emoji: '🔧', reason: 'Tools for the job' },
-      { emoji: '📊', reason: 'Work analytics' },
-      { emoji: '✅', reason: 'Completing tasks' }
-    ],
-    'happy': [
-      { emoji: '😊', reason: 'Happy and content' },
-      { emoji: '🎉', reason: 'Celebration' },
-      { emoji: '😄', reason: 'Joyful expression' },
-      { emoji: '🌟', reason: 'Bright and positive' },
-      { emoji: '💖', reason: 'Love and happiness' }
-    ],
-    'sad': [
-      { emoji: '😢', reason: 'Expressing sadness' },
-      { emoji: '💔', reason: 'Heartbreak' },
-      { emoji: '😔', reason: 'Disappointed' },
-      { emoji: '🌧️', reason: 'Gloomy mood' },
-      { emoji: '😞', reason: 'Down feeling' }
-    ],
-    'success': [
-      { emoji: '🏆', reason: 'Achievement trophy' },
-      { emoji: '🎯', reason: 'Hit the target' },
-      { emoji: '✨', reason: 'Shining success' },
-      { emoji: '🌟', reason: 'Star performer' },
-      { emoji: '👑', reason: 'Champion' }
-    ]
-  }
-
-  // Find matching keywords
-  for (const [keyword, suggestions] of Object.entries(keywordMap)) {
-    if (lowerPhrase.includes(keyword)) {
-      return suggestions
+    const data = await response.json()
+    
+    // Check for API errors
+    if (!data.candidates || data.candidates.length === 0) {
+      console.error('Gemini response:', data)
+      throw new Error('No response from Gemini. The content may have been blocked by safety filters.')
     }
-  }
 
-  // Default suggestions
-  return [
-    { emoji: '💭', reason: 'General thought bubble' },
-    { emoji: '📝', reason: 'Note or message' },
-    { emoji: '🎯', reason: 'Focus and direction' },
-    { emoji: '✨', reason: 'Special or important' },
-    { emoji: '🔍', reason: 'Looking for the right fit' }
-  ]
+    const textResponse = data.candidates[0].content.parts[0].text.trim()
+    
+    // Try to parse JSON, handling potential markdown wrapping
+    let suggestions
+    try {
+      // Remove markdown code blocks if present
+      const cleanedContent = textResponse.replace(/```json\n?|\n?```/g, '').trim()
+      suggestions = JSON.parse(cleanedContent)
+    } catch (parseError) {
+      console.error('Failed to parse Gemini response:', textResponse)
+      throw new Error('Invalid response format from Gemini. Please try again.')
+    }
+
+    // Validate response format
+    if (!Array.isArray(suggestions) || suggestions.length === 0) {
+      throw new Error('Gemini returned an invalid response format')
+    }
+
+    // Validate each suggestion has required fields
+    const validSuggestions = suggestions.filter(item => item.emoji && item.reason)
+    if (validSuggestions.length === 0) {
+      throw new Error('No valid emoji suggestions in response')
+    }
+
+    return validSuggestions
+  } catch (error) {
+    if (error.message.includes('API key')) {
+      throw error
+    }
+    console.error('Gemini API error:', error)
+    throw new Error(`Failed to get suggestions from Gemini: ${error.message}`)
+  }
 }
 
 /**
