@@ -63,12 +63,6 @@ VITE_AI_PROVIDER=gemini
 VITE_GEMINI_API_KEY=...
 ```
 
-## Development Status
-
-⚠️ **Note**: The AI integration is currently using **stub/mock data**. The actual API calls need to be implemented in `src/services/aiService.js`.
-
-See `.github/copilot-instructions.md` for detailed implementation guidance.
-
 ## Project Structure
 
 ```
@@ -109,8 +103,6 @@ MIT
 
 ## Next Steps
 
-- [ ] Implement OpenAI API integration
-- [ ] Implement Gemini API integration  
 - [ ] Add toast notifications for copy actions
 - [ ] Add settings panel for runtime provider switching
 - [ ] Add tests for components and services

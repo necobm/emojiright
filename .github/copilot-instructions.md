@@ -8,14 +8,17 @@ Right Emoji is a React SPA that suggests contextually appropriate emojis for use
 ### Core Components
 - **`src/App.jsx`** - Main application shell with header, footer, and layout
 - **`src/components/EmojiSuggester.jsx`** - Primary feature component handling user input, API calls, and emoji display
-- **`src/services/aiService.js`** - AI provider abstraction layer (currently stub implementation)
+- **`src/components/ThemeToggle.jsx`** - Light/dark theme switcher with localStorage persistence
+- **`src/components/Toast.jsx`** - Notification system for user feedback (copy confirmations)
+- **`src/services/aiService.js`** - AI provider abstraction layer with OpenAI and Gemini implementations
 
 ### Service Layer Pattern
 All AI provider interactions go through `aiService.js` which:
 - Exports `getEmojiSuggestions(phrase)` as the main interface
 - Routes requests based on `VITE_AI_PROVIDER` env var ('openai' or 'gemini')
 - Returns array format: `[{emoji: '💡', reason: 'Represents ideas'}]`
-- Currently uses keyword-based mock suggestions via `getMockSuggestions()`
+- **Fully implemented** with OpenAI GPT-3.5-turbo and Google Gemini integration
+- Handles JSON parsing, markdown cleanup, and error scenarios
 
 ### Data Flow
 1. User enters phrase → `EmojiSuggester` component
@@ -51,70 +54,34 @@ npm run preview
 ### Key Commands
 - `npm run lint` - ESLint checks for code quality
 
-## Critical Implementation Tasks
+## Implemented Features
 
-### 🚨 PRIORITY: AI Provider Integration
-The app currently uses mock data. To enable real AI suggestions:
+### ✅ AI Provider Integration
+Both OpenAI and Gemini are fully integrated with production-ready implementations:
 
 #### OpenAI Integration (`src/services/aiService.js`)
-Uncomment and adapt the API call structure in `getOpenAISuggestions()`:
-```javascript
-const response = await fetch('https://api.openai.com/v1/chat/completions', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${OPENAI_API_KEY}`
-  },
-  body: JSON.stringify({
-    model: 'gpt-3.5-turbo',
-    messages: [{
-      role: 'system',
-      content: 'You are an emoji suggestion assistant. Respond with JSON only.'
-    }, {
-      role: 'user',
-      content: `Given the phrase: "${phrase}", suggest 5 relevant emojis. Return ONLY a JSON array with format: [{"emoji": "💡", "reason": "Represents ideas"}]`
-    }],
-    temperature: 0.7
-  })
-})
-```
-
-**Important**: 
-- Parse the JSON response from `data.choices[0].message.content`
-- Handle rate limits and API errors gracefully
-- Consider streaming responses for better UX
+- Uses GPT-3.5-turbo model for cost-effectiveness
+- Full error handling for rate limits, invalid keys, network errors
+- JSON parsing with markdown block removal
+- Response validation and filtering
+- Returns 5 emoji suggestions per request
 
 #### Gemini Integration (`src/services/aiService.js`)
-Uncomment and adapt the API call structure in `getGeminiSuggestions()`:
-```javascript
-const response = await fetch(
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
-  {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{
-          text: `Given the phrase: "${phrase}", suggest 5 relevant emojis. Return ONLY a JSON array with format: [{"emoji": "💡", "reason": "Represents ideas"}]`
-        }]
-      }]
-    })
-  }
-)
-```
+- Uses gemini-2.5-flash-lite model (free tier available)
+- Safety filter handling with clear error messages
+- JSON parsing with markdown block removal  
+- Response validation and filtering
+- Returns 4 emoji suggestions per request
 
-**Important**:
-- Parse the JSON from `data.candidates[0].content.parts[0].text`
-- Handle content safety filters and quota limits
-- Extract JSON from markdown code blocks if needed
-
-### Prompt Engineering Guidelines
-When implementing AI calls, optimize the prompt:
-- Request exactly 5 emoji suggestions
-- Require JSON-only responses (no markdown)
-- Include example format in prompt
-- Set appropriate temperature (0.7 recommended)
-- Handle cases where AI returns text instead of JSON
+### Prompt Engineering (Implemented)
+The AI prompts are optimized for consistent JSON responses:
+### Prompt Engineering (Implemented)
+The AI prompts are optimized for consistent JSON responses:
+- Request exact number of emoji suggestions (5 for OpenAI, 4 for Gemini)
+- Require JSON-only responses with explicit "no markdown" instruction
+- Include example format in every prompt
+- Temperature set to 0.7 for balanced creativity
+- Robust handling when AI returns markdown-wrapped JSON
 
 ## Code Conventions
 
@@ -134,7 +101,9 @@ When implementing AI calls, optimize the prompt:
 - CSS Modules pattern (component-specific stylesheets)
 - Gradient theme: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`
 - Responsive design with mobile breakpoint at 768px
-- Dark mode by default with light mode media query
+- **Light/Dark theme support** via CSS custom properties (--bg-color, --text-color, etc.)
+- Theme state persisted in localStorage
+- Smooth transitions between theme changes
 
 ### Error Handling
 - Service layer throws descriptive errors
@@ -183,13 +152,17 @@ right-emoji/
 ├── src/
 │   ├── components/        # React components with dedicated CSS
 │   │   ├── EmojiSuggester.jsx
-│   │   └── EmojiSuggester.css
+│   │   ├── EmojiSuggester.css
+│   │   ├── ThemeToggle.jsx
+│   │   ├── ThemeToggle.css
+│   │   ├── Toast.jsx
+│   │   └── Toast.css
 │   ├── services/          # External API integrations
-│   │   └── aiService.js   # 🚨 Needs AI provider implementation
+│   │   └── aiService.js   # ✅ OpenAI & Gemini implemented
 │   ├── App.jsx            # Main app component
 │   ├── App.css
 │   ├── main.jsx           # React entry point
-│   └── index.css          # Global styles
+│   └── index.css          # Global styles with theme support
 ├── public/                # Static assets
 ├── .env                   # Local environment config (gitignored)
 ├── .env.example           # Template for environment variables
@@ -197,10 +170,10 @@ right-emoji/
 ```
 
 ## Next Steps for AI Agents
-1. **Implement OpenAI API integration** in `aiService.js` - uncomment and test the API call structure
-2. **Implement Gemini API integration** in `aiService.js` - uncomment and test the API call structure
-3. **Add response parsing** - handle both providers' unique JSON structures
-4. **Error handling** - improve user messages for different failure scenarios
-5. **Add loading indicators** - enhance UX during API calls
-6. **Toast notifications** - confirm when emoji copied to clipboard
-7. **Settings panel** - allow runtime provider switching without .env edits
+1. ✅ **Implement OpenAI API integration** - COMPLETED with full error handling and JSON parsing
+2. ✅ **Implement Gemini API integration** - COMPLETED with safety filter handling  
+3. ✅ **Add response parsing** - COMPLETED for both providers with markdown removal
+4. ✅ **Error handling** - COMPLETED with descriptive user messages
+5. ✅ **Add loading indicators** - COMPLETED (spinner in submit button)
+6. ✅ **Toast notifications** - COMPLETED (shows when emoji copied to clipboard)
+

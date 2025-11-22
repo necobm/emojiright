@@ -57,7 +57,7 @@ async function getOpenAISuggestions(phrase) {
       // Remove markdown code blocks if present
       const cleanedContent = content.replace(/```json\n?|\n?```/g, '').trim()
       suggestions = JSON.parse(cleanedContent)
-    } catch (parseError) {
+    } catch {
       console.error('Failed to parse OpenAI response:', content)
       throw new Error('Invalid response format from OpenAI. Please try again.')
     }
@@ -132,7 +132,7 @@ async function getGeminiSuggestions(phrase) {
       // Remove markdown code blocks if present
       const cleanedContent = textResponse.replace(/```json\n?|\n?```/g, '').trim()
       suggestions = JSON.parse(cleanedContent)
-    } catch (parseError) {
+    } catch {
       console.error('Failed to parse Gemini response:', textResponse)
       throw new Error('Invalid response format from Gemini. Please try again.')
     }

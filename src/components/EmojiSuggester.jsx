@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import './EmojiSuggester.css'
 import { getEmojiSuggestions } from '../services/aiService'
+import Toast from './Toast'
 
 function EmojiSuggester() {
   const [phrase, setPhrase] = useState('')
   const [suggestions, setSuggestions] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [toast, setToast] = useState(null)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -32,7 +34,10 @@ function EmojiSuggester() {
 
   const handleCopyEmoji = (emoji) => {
     navigator.clipboard.writeText(emoji)
-    // Optional: Show a toast notification
+    setToast({
+      message: `${emoji} copied to clipboard!`,
+      type: 'success'
+    })
   }
 
   return (
@@ -82,6 +87,14 @@ function EmojiSuggester() {
           </div>
           <p className="copy-hint">💡 Click on any emoji to copy it</p>
         </div>
+      )}
+
+      {toast && (
+        <Toast 
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   )
