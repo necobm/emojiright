@@ -7,7 +7,7 @@ function App() {
     <div className="app">
       <ThemeToggle />
       <header className="app-header">
-        <h1>✨ Right Emoji</h1>
+        <h1>✨ Emoji Right</h1>
         <p className="subtitle">AI-powered emoji suggestions for your phrases</p>
       </header>
       <main className="app-main">
