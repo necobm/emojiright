@@ -1,0 +1,17 @@
+{
+  "name": "Right Emoji",
+  "short_name": "Right Emoji",
+  "description": "AI-powered emoji suggestions for your phrases",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#667eea",
+  "icons": [
+    {
+      "src": "/emoji.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
