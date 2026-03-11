@@ -25,7 +25,7 @@
   <text x="600" y="200" text-anchor="middle" font-size="80" font-family="serif">✨ 💡 🎯 🚀 💬</text>
 
   <!-- Title -->
-  <text x="600" y="310" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="700" font-size="72" fill="white" letter-spacing="-1">Right Emoji</text>
+  <text x="600" y="310" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="700" font-size="72" fill="white" letter-spacing="-1">Emoji Right</text>
 
   <!-- Subtitle -->
   <text x="600" y="380" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="400" font-size="32" fill="white" opacity="0.85">AI-powered emoji suggestions for your phrases</text>

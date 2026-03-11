@@ -1,6 +1,6 @@
 {
-  "name": "Right Emoji",
-  "short_name": "Right Emoji",
+  "name": "Emoji Right",
+  "short_name": "Emoji Right",
   "description": "AI-powered emoji suggestions for your phrases",
   "start_url": "/",
   "display": "standalone",
