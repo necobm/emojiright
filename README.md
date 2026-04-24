@@ -4,35 +4,67 @@ AI-powered emoji suggestion app that helps you find the perfect emoji for any ph
 
 ## Features
 
-- 🎯 Context-aware emoji suggestions
-- 🤖 Multiple AI provider support (OpenAI, Google Gemini)
-- 📋 One-click emoji copying
+- 🎯 Context-aware emoji suggestions powered by AI
+- 🤖 Multiple AI provider support (OpenAI GPT-3.5, Google Gemini)
+- 🔒 Secure backend via Cloudflare Workers (API keys never exposed)
+- 📋 One-click emoji copying with toast notifications
+- 🌓 Light/Dark theme support
 - 🎨 Modern, responsive UI
 - ⚡ Built with React + Vite
+
+## Architecture
+
+```
+User → React Frontend → Cloudflare Worker → OpenAI/Gemini APIs
+                        (API keys secure)
+```
+
+The app uses a Cloudflare Worker backend to securely proxy AI requests, keeping API keys server-side and never exposing them in the frontend bundle.
 
 ## Quick Start
 
 ### Prerequisites
 
 - Node.js 16+ and npm
+- Cloudflare account (free tier works!)
 
-### Installation
+### 1. Deploy Cloudflare Worker (Backend)
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
+
+```bash
+# Install Wrangler CLI
+npm install -g wrangler
+
+# Login and deploy
+cd cloudflare-worker
+wrangler login
+wrangler deploy
+
+# Add your API keys as encrypted secrets
+wrangler secret put OPENAI_API_KEY
+wrangler secret put GEMINI_API_KEY
+```
+
+You'll get a worker URL like: `https://right-emoji-api.YOUR-SUBDOMAIN.workers.dev`
+
+### 2. Setup Frontend
 
 ```bash
 # Install dependencies
 npm install
 
-# Set up environment variables
-cp .env.example .env
+# Configure environment
+cp .env.example .env.local
 ```
 
-Edit `.env` and add your API keys:
+Edit `.env.local` with your worker URL:
 ```env
-VITE_AI_PROVIDER=openai
-VITE_OPENAI_API_KEY=sk-your-key-here
+VITE_AI_PROVIDER=gemini
+VITE_API_URL=https://right-emoji-api.YOUR-SUBDOMAIN.workers.dev
 ```
 
-### Run Development Server
+### 3. Run Development Server
 
 ```bash
 npm run dev
@@ -49,37 +81,69 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Configuration
 
-The app supports two AI providers:
+### AI Provider Selection
 
-### OpenAI
+Choose between OpenAI or Gemini in `.env.local`:
+
 ```env
-VITE_AI_PROVIDER=openai
-VITE_OPENAI_API_KEY=sk-...
+VITE_AI_PROVIDER=gemini  # or 'openai'
+VITE_API_URL=https://your-worker.workers.dev
 ```
 
-### Google Gemini
-```env
-VITE_AI_PROVIDER=gemini
-VITE_GEMINI_API_KEY=...
+### API Keys (Cloudflare Worker Secrets)
+
+API keys are stored as encrypted secrets in Cloudflare Workers, never in your code:
+
+```bash
+cd cloudflare-worker
+wrangler secret put OPENAI_API_KEY   # For OpenAI
+wrangler secret put GEMINI_API_KEY   # For Gemini (FREE tier!)
 ```
+
+### Cost
+
+- **Cloudflare Worker**: FREE (100k requests/day)
+- **OpenAI GPT-3.5**: ~$0.002 per request
+- **Google Gemini**: FREE (15 requests/minute)
+
+## Deployment
+
+### Production Build
+
+```bash
+npm run build
+```
+
+The `dist/` folder contains your static site with **NO API keys** exposed! 🔒
+
+### Deploy Frontend
+
+Upload `dist/` contents to any static hosting:
+- Netlify
+- Vercel
+- GitHub Pages
+- Your own server
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for complete instructions.
 
 ## Project Structure
 
 ```
 right-emoji/
-├── src/
+├── cloudflare-worker/         # Backend API (Cloudflare Worker)
+│   ├── worker.js             # Worker code with AI proxy logic
+│   ├── wrangler.toml         # Cloudflare config
+│   └── README.md             # Worker deployment guide
+├── src/                       # Frontend React app
 │   ├── components/
-│   │   ├── EmojiSuggester.jsx    # Main emoji input & display
-│   │   └── EmojiSuggester.css
+│   │   ├── EmojiSuggester.jsx
+│   │   ├── ThemeToggle.jsx
+│   │   └── Toast.jsx
 │   ├── services/
-│   │   └── aiService.js          # AI provider abstraction
+│   │   └── aiService.js      # Calls Cloudflare Worker
 │   ├── App.jsx
-│   ├── App.css
-│   ├── main.jsx
-│   └── index.css
-├── public/
-│   └── emoji.svg
-├── .env.example
+│   └── main.jsx
+├── DEPLOYMENT.md              # Detailed deployment guide
 └── package.json
 ```
 
@@ -101,8 +165,19 @@ right-emoji/
 
 MIT
 
-## Next Steps
+## Implemented Features
 
-- [ ] Add toast notifications for copy actions
-- [ ] Add settings panel for runtime provider switching
-- [ ] Add tests for components and services
+- ✅ OpenAI & Gemini AI integration
+- ✅ Secure backend with Cloudflare Workers
+- ✅ Toast notifications for copy feedback
+- ✅ Light/Dark theme switcher
+- ✅ Responsive design
+- ✅ Error handling & loading states
+
+## Future Enhancements
+
+- [ ] Settings panel for runtime provider switching
+- [ ] Rate limiting on worker
+- [ ] Request caching for repeated phrases
+- [ ] Emoji history/favorites
+- [ ] Tests for components and services

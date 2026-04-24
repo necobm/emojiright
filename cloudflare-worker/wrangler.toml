@@ -1,0 +1,13 @@
+name = "right-emoji-api"
+main = "worker.js"
+compatibility_date = "2025-11-22"
+
+# Secrets (API keys) are stored encrypted via Wrangler CLI
+# Deploy secrets with:
+#   wrangler secret put OPENAI_API_KEY
+#   wrangler secret put GEMINI_API_KEY
+
+# Optional: Custom domain configuration
+# [route]
+# pattern = "api.yourdomain.com"
+# zone_name = "yourdomain.com"
